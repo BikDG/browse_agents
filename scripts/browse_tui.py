@@ -1677,7 +1677,7 @@ def main():
     sessions = load_index()
     if not sessions:
         print("No sessions indexed yet. Run /ask-expert first, or:")
-        print("  python3 ~/.claude/plugins/ask-expert/scripts/index_sessions.py")
+        print(f"  python3 {PLUGIN_DIR / 'scripts' / 'index_sessions.py'}")
         sys.exit(1)
 
     roots, children = build_tree(sessions, load_detached())
