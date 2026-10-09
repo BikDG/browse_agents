@@ -900,7 +900,7 @@ def confirm_prompt(stdscr, msg):
             return False
 
 
-def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_active=False, stars=None, permissive=False, custom_titles=None, rename_active=False, rename_buffer="", folders=None, assignments=None, status_msg=None, pending=None, detached_ids=None):
+def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_active=False, stars=None, permissive=False, custom_titles=None, rename_active=False, rename_buffer="", folders=None, assignments=None, status_msg=None, pending=None, detached_ids=None, sem_query=None):
     if stars is None:
         stars = set()
     if custom_titles is None:
@@ -922,7 +922,9 @@ def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_activ
     detail_x = list_w + 2
     detail_w = w - detail_x
 
-    if rename_active:
+    if sem_query:
+        title_bar = f" /browse-experts — FAISS: {sem_query}  (esc=clear) "
+    elif rename_active:
         title_bar = f" rename: {rename_buffer}_  (enter=save, esc=cancel) "
     elif search_active:
         title_bar = f" search: {search_query}_  (enter=confirm, esc=cancel) "
@@ -1168,10 +1170,12 @@ def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_activ
         help_text = "  rename mode: type name   enter=save   esc=cancel   blank+enter=clear"
     elif search_active:
         help_text = "  type to search   enter=confirm   esc=cancel   backspace=delete char"
+    elif sem_query:
+        help_text = "  ↑↓ move   enter=open   f=fork   esc=clear FAISS   q=quit"
     elif search_query:
         help_text = "  ↑↓ move   enter=continue   f=fork   s=star   r=rename   del=trash   q=quit"
     else:
-        help_text = "  ↑↓ →/space  / search  d=mkdir  m=move  s=star  r=rename  f=fork  x=detach  del=trash  v=saved  F5=rescan  enter=open  q=quit"
+        help_text = "  ↑↓ →/space  / search  w=FAISS  d=mkdir  m=move  s=star  r=rename  f=fork  x=detach  del=trash  v=saved  F5=rescan  enter=open  q=quit"
     counter = f"  {cursor + 1}/{len(rows)}  " if rows else "  0/0  "
     pad = w - len(help_text) - len(counter)
     if pad < 0:
@@ -1192,6 +1196,31 @@ def parent_of(sid, sessions, indexed_ids, detached=None):
     return None
 
 
+VENV_PY = DATA_DIR / "venv" / "bin" / "python"
+SEMANTIC_SCRIPT = PLUGIN_DIR / "scripts" / "semantic.py"
+
+
+def semantic_search(query, k=50):
+    """Ordered session ids via local/Voyage FAISS, or None if unavailable."""
+    q = (query or "").strip()
+    if not q or not (VENV_PY.exists() and SEMANTIC_SCRIPT.exists()):
+        return None
+    try:
+        res = subprocess.run(
+            [str(VENV_PY), str(SEMANTIC_SCRIPT), "query", q, "-k", str(k)],
+            capture_output=True, text=True, timeout=60,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    if res.returncode != 0 or not res.stdout.strip():
+        return None
+    try:
+        hits = json.loads(res.stdout.strip())
+    except json.JSONDecodeError:
+        return None
+    return [h["id"] for h in hits if isinstance(h, dict) and h.get("id")]
+
+
 def tui_main(stdscr, sessions, roots, children):
     curses.curs_set(0)
     stdscr.keypad(True)
@@ -1202,6 +1231,10 @@ def tui_main(stdscr, sessions, roots, children):
     indexed_ids = set(sessions.keys())
     search_query = ""
     search_active = False
+    wsearch_active = False
+    wsearch_buffer = ""
+    sem_query = ""
+    sem_results = []
     stars = load_stars()
     custom_titles = load_titles()
     folders, assignments = load_folders()
@@ -1223,17 +1256,21 @@ def tui_main(stdscr, sessions, roots, children):
         roots, children = build_tree(sessions, detached)
 
     while True:
-        if search_query:
+        if sem_query:
+            rows = [("session", sid, 0, False, False)
+                    for sid in sem_results if sid in sessions]
+        elif search_query:
             rows = filtered_flat(sessions, search_query, custom_titles)
         else:
             rows = build_rows(roots, children, expanded, folders, assignments,
                               pending, known=set(sessions))
 
-        if not rows and not search_active:
+        if not rows and not search_active and not wsearch_active:
             stdscr.erase()
             h, w = stdscr.getmaxyx()
             safe_addstr(stdscr, 0, 0, " /browse-experts ".ljust(w)[:w], curses.A_REVERSE)
-            safe_addstr(stdscr, 2, 2, f"no sessions match: {search_query}" if search_query else "no sessions to display")
+            _q = sem_query or search_query
+            safe_addstr(stdscr, 2, 2, f"no sessions match: {_q}" if _q else "no sessions to display")
             safe_addstr(stdscr, 4, 2, "press / to edit search, esc to clear, q to quit")
             stdscr.refresh()
             key = stdscr.getch()
@@ -1241,6 +1278,7 @@ def tui_main(stdscr, sessions, roots, children):
                 return None
             if key == 27:  # esc
                 search_query = ""
+                sem_query = ""
                 continue
             if key == ord("/"):
                 search_active = True
@@ -1268,10 +1306,12 @@ def tui_main(stdscr, sessions, roots, children):
             draw_status = f"move to: {choices}   0=unfile   esc=cancel"
         elif mkdir_active:
             draw_status = f"new folder name: {mkdir_buffer}_   enter=create   esc=cancel"
+        elif wsearch_active:
+            draw_status = f"FAISS search: {wsearch_buffer}_   enter=search   esc=cancel"
         draw(stdscr, sessions, rows, cursor, scroll, search_query, search_active,
              stars, permissive, custom_titles, rename_active,
              active_rename_buf, folders, assignments, draw_status, pending,
-             detached)
+             detached, sem_query)
         status_msg = None  # one-shot
 
         try:
@@ -1371,6 +1411,26 @@ def tui_main(stdscr, sessions, roots, children):
                 cursor = 0
             continue
 
+        # FAISS-search-input mode: type a query, Enter runs semantic search.
+        if wsearch_active:
+            if key in (10, 13):
+                res = semantic_search(wsearch_buffer)
+                if res is None:
+                    status_msg = "semantic search not set up (run setup_local.sh + semantic.py build)"
+                else:
+                    sem_results = [s for s in res if s in sessions]
+                    sem_query = wsearch_buffer.strip()
+                    search_query = ""
+                    cursor = 0
+                wsearch_active = False
+            elif key == 27:
+                wsearch_active = False
+            elif key in (curses.KEY_BACKSPACE, 127, 8):
+                wsearch_buffer = wsearch_buffer[:-1]
+            elif 32 <= key < 127:
+                wsearch_buffer += chr(key)
+            continue
+
         kind, ident, depth, has_kids, is_open = rows[cursor]
         is_folder = kind == "folder"
         is_pending = kind == "pending"
@@ -1379,13 +1439,18 @@ def tui_main(stdscr, sessions, roots, children):
         if key == ord("q"):
             return None
         elif key == 27:                      # esc: clear filter or quit
-            if search_query:
+            if sem_query or search_query:
+                sem_query = ""
                 search_query = ""
                 cursor = 0
             else:
                 return None
         elif key == ord("/"):
+            sem_query = ""
             search_active = True
+        elif key in (ord("w"), ord("W")):
+            wsearch_active = True
+            wsearch_buffer = ""
         elif key in (curses.KEY_DOWN, ord("j")):
             cursor = min(cursor + 1, len(rows) - 1)
         elif key in (curses.KEY_UP, ord("k")):
