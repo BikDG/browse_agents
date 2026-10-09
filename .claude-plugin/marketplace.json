@@ -1,0 +1,12 @@
+{
+  "name": "browse-agents",
+  "owner": { "name": "BikDG" },
+  "plugins": [
+    {
+      "name": "ask-expert",
+      "source": "./",
+      "description": "Browse, search, fork, and continue past Claude Code sessions as a navigable tree; optional local semantic search; transcript-persistence guards.",
+      "version": "0.2.0"
+    }
+  ]
+}

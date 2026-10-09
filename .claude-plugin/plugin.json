@@ -1,0 +1,8 @@
+{
+  "name": "ask-expert",
+  "version": "0.2.0",
+  "description": "Browse, search, fork, and continue past Claude Code sessions as a navigable tree; optional local semantic search; transcript-persistence guards.",
+  "author": { "name": "BikDG" },
+  "homepage": "https://github.com/BikDG/browse_agents",
+  "keywords": ["sessions", "resume", "fork", "tui", "semantic-search", "history"]
+}

@@ -1,0 +1,22 @@
+# User data / runtime state — never commit
+data/
+voyage.env
+*.env
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Archives / scratch
+*.tar.gz
+*.zst
+
+# Personal style guides — never ship
+freeman-*.md
+freeman-code-style.md
+CODING_PREFERENCES_INFERRED.md
+
+# Editor / OS
+.DS_Store
+*.swp
