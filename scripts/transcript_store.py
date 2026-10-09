@@ -23,8 +23,8 @@ import os
 import shutil
 import time
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 STORE = DATA_DIR / "transcript-store"
 CHUNK = 4 << 20
 MIN_BYTES = 200

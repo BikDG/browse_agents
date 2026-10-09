@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
+source "$(dirname "$0")/paths.sh"
 # Ensure exactly one transcript backup daemon is running. Idempotent: safe to
 # call repeatedly (e.g. from spawn_browse.sh on every /browse-experts launch).
 set -u
 
-DATA_DIR=/home/bik/.claude/plugins/ask-expert/data
+DATA_DIR=$DATA_DIR
 PID_FILE="$DATA_DIR/backup-daemon.pid"
-DAEMON=/home/bik/.claude/plugins/ask-expert/scripts/backup_daemon.py
+DAEMON=$PLUGIN_ROOT/scripts/backup_daemon.py
 
 # Already running? `kill -0` alone is not enough: pids get recycled, and a
 # stale pid file pointing at some unrelated process would make us think the

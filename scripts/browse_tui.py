@@ -54,9 +54,8 @@ import sys
 import textwrap
 import time
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-PLUGIN_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = PLUGIN_DIR / "data"
 INDEX_FILE = DATA_DIR / "index.json"
 REPORTS_DIR = DATA_DIR / "reports"
 STARS_FILE = DATA_DIR / "stars.json"

@@ -21,9 +21,9 @@ import shutil
 import sys
 import time
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 BACKUP_DIR = DATA_DIR / "transcript-backups"
 LOCK_DIR = DATA_DIR / "locks"
 

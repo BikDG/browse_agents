@@ -10,8 +10,9 @@ import json
 import os
 import sys
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-REPORTS_DIR = Path.home() / ".claude" / "plugins" / "ask-expert" / "data" / "reports"
+REPORTS_DIR = DATA_DIR / "reports"
 
 
 def find_session_jsonl(sid):

@@ -8,7 +8,7 @@ The user wants to /report-back to the parent session.
 
 Step 1 — discover session lineage and report path. Parse the `key=value` lines:
 
-!`python3 /home/bik/.claude/plugins/ask-expert/scripts/report_back_setup.py`
+!`python3 ${CLAUDE_PLUGIN_ROOT}/scripts/report_back_setup.py`
 
 Step 2 — compose the report.
 

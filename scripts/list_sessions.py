@@ -5,10 +5,11 @@ import json
 import os
 import sys
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-INDEX_FILE = Path.home() / ".claude" / "plugins" / "ask-expert" / "data" / "index.json"
-STARS_FILE = Path.home() / ".claude" / "plugins" / "ask-expert" / "data" / "stars.json"
-TITLES_FILE = Path.home() / ".claude" / "plugins" / "ask-expert" / "data" / "titles.json"
+INDEX_FILE = DATA_DIR / "index.json"
+STARS_FILE = DATA_DIR / "stars.json"
+TITLES_FILE = DATA_DIR / "titles.json"
 
 
 def _load_json(p, default):

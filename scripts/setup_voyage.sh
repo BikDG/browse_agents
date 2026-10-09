@@ -13,7 +13,8 @@ set -euo pipefail
 
 SCRIPTS="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN="$(dirname "$SCRIPTS")"
-DATA="$PLUGIN/data"
+source "$SCRIPTS/paths.sh"
+DATA="$DATA_DIR"
 VENV="$DATA/venv"
 SEM="$DATA/semantic"
 KEYFILE="$DATA/voyage.env"

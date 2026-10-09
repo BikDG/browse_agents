@@ -10,9 +10,10 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
-LINEAGE_FILE = Path(__file__).resolve().parent.parent / "data" / "fork_lineage.json"
+LINEAGE_FILE = DATA_DIR / "fork_lineage.json"
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from resolve_session_cwd import decode  # noqa: E402

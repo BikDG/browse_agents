@@ -20,12 +20,12 @@ import os
 import sys
 import time
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import transcript_store as store
 
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 PID_FILE = DATA_DIR / "backup-daemon.pid"
 LOG = DATA_DIR / "hook-capture.log"
 

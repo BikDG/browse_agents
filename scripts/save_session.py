@@ -15,9 +15,8 @@ import shutil
 import sys
 import time
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-PLUGIN_DIR = Path(__file__).resolve().parent.parent
-DATA_DIR = PLUGIN_DIR / "data"
 SAVES_DIR = DATA_DIR / "saves"
 SAVED_FILE = DATA_DIR / "saved.json"
 

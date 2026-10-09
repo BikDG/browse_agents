@@ -16,8 +16,8 @@ import sys
 import time
 from collections import defaultdict
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 BACKUP_DIR = DATA_DIR / "transcript-backups"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import transcript_store as store

@@ -12,10 +12,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
 PROJECTS_DIR = Path.home() / ".claude" / "projects"
-PLUGIN_DIR = Path.home() / ".claude" / "plugins" / "ask-expert"
-DATA_DIR = PLUGIN_DIR / "data"
 INDEX_FILE = DATA_DIR / "index.json"
 MAX_SESSIONS = 300  # how many recent sessions to scan for new classification;
 # retention is independent — already-indexed sessions persist as long as their

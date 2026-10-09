@@ -10,10 +10,10 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from ask_paths import PLUGIN_DIR, DATA_DIR
 
-PLUGIN_DIR = Path(__file__).resolve().parent.parent
-INDEX_FILE = PLUGIN_DIR / "data" / "index.json"
-VENV_PY = PLUGIN_DIR / "data" / "venv" / "bin" / "python"
+INDEX_FILE = DATA_DIR / "index.json"
+VENV_PY = DATA_DIR / "venv" / "bin" / "python"
 SEMANTIC = PLUGIN_DIR / "scripts" / "semantic.py"
 RECALL_K = 25  # how many FAISS candidates to hand the Haiku reranker
 

@@ -1,13 +1,13 @@
 ---
 description: Browse past Claude Code sessions. Opens a curses TUI in a new window when possible; falls back to inline list selection over plain SSH.
-allowed-tools: Bash(bash:*), Bash(/home/bik/.claude/plugins/ask-expert/scripts/spawn_browse.sh:*), Bash(/home/bik/.claude/plugins/ask-expert/scripts/spawn_fork.sh:*)
+allowed-tools: Bash(bash:*), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/spawn_browse.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/scripts/spawn_fork.sh:*)
 ---
 
 The user wants to browse past sessions and pick one to continue or fork.
 
 Step 1 — attempt to launch the TUI:
 
-!`bash /home/bik/.claude/plugins/ask-expert/scripts/spawn_browse.sh`
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/spawn_browse.sh`
 
 Now interpret the output:
 
@@ -17,7 +17,7 @@ Now interpret the output:
   1. Show the table to the user verbatim.
   2. Ask: **"Pick a session by number to continue (e.g. `3`) or fork (e.g. `3 f`). Add `p` for permissive mode (e.g. `3 f p`)."**
   3. When the user replies (e.g. `3`, `3 f`, or `3 f p`), look up the matching `session_id` from the table. Call:
-     `bash /home/bik/.claude/plugins/ask-expert/scripts/spawn_fork.sh <session_id> <fork|continue> [permissive]`
+     `bash ${CLAUDE_PLUGIN_ROOT}/scripts/spawn_fork.sh <session_id> <fork|continue> [permissive]`
   4. The spawn script will either open the session in a new tmux/graphical window (then you confirm), or print "NO_DISPLAY" with a `claude --resume …` command for the user to run themselves after exiting claude.
   5. Pass that command through to the user; do not pretend it ran.
 

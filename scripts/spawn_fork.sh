@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source "$(dirname "$0")/paths.sh"
 # Launch claude on the given session in a separate window.
 #
 # Usage: spawn_fork.sh <session-id> [fork|continue] [permissive]
@@ -16,7 +17,7 @@ if [ -z "$session_id" ]; then
   exit 2
 fi
 
-resolver=/home/bik/.claude/plugins/ask-expert/scripts/resolve_session_cwd.py
+resolver=$PLUGIN_ROOT/scripts/resolve_session_cwd.py
 cwd="$(python3 "$resolver" "$session_id" 2>/dev/null || true)"
 
 claude_args="--resume $(printf '%q' "$session_id")"
@@ -28,7 +29,7 @@ if [ "$permissive" = "permissive" ] || [ "$permissive" = "1" ]; then
 fi
 
 # Append sibling-fork reports via --append-system-prompt if any exist.
-report_file=/home/bik/.claude/plugins/ask-expert/data/reports/$session_id.md
+report_file=$DATA_DIR/reports/$session_id.md
 if [ -f "$report_file" ]; then
   preface="# Reports from sibling forks of this session"$'\n\n'
   preface+="The following are summaries written via /report-back by other "
@@ -39,7 +40,7 @@ if [ -f "$report_file" ]; then
   claude_args+=" --append-system-prompt $(printf '%q' "$appended")"
 fi
 
-guard=/home/bik/.claude/plugins/ask-expert/scripts/session_guard.py
+guard=$PLUGIN_ROOT/scripts/session_guard.py
 
 # Inner command run in the spawned window:
 #   1. concurrent-open guard — refuse-by-default if this session id is already
@@ -101,6 +102,13 @@ fi
 
 # 3) Graphical terminal
 if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+  # User-configured terminal wins (expects a `-e CMD` convention). Falls through
+  # to auto-detect on failure.
+  if [ -n "${ASK_EXPERT_TERMINAL:-}" ]; then
+    if $ASK_EXPERT_TERMINAL -e bash -lc "$cmd" 2>/dev/null; then
+      echo "$mode session opened in $ASK_EXPERT_TERMINAL window (cwd: ${cwd:-default})"; exit 0
+    fi
+  fi
   if command -v gnome-terminal >/dev/null 2>&1; then
     if gnome-terminal -- bash -lc "$cmd" 2>/dev/null; then
       echo "$mode session opened in new gnome-terminal window (cwd: ${cwd:-default})"

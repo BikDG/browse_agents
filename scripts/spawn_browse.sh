@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+source "$(dirname "$0")/paths.sh"
 # Launch the /browse-experts TUI.
 #
 # Resolution order:
@@ -15,11 +16,11 @@
 #   1 = unexpected failure
 set -u
 
-TUI=/home/bik/.claude/plugins/ask-expert/scripts/browse_tui.py
-LIST=/home/bik/.claude/plugins/ask-expert/scripts/list_sessions.py
-INDEXER=/home/bik/.claude/plugins/ask-expert/scripts/index_sessions.py
-SEMANTIC=/home/bik/.claude/plugins/ask-expert/scripts/semantic.py
-VENV_PY=/home/bik/.claude/plugins/ask-expert/data/venv/bin/python
+TUI=$PLUGIN_ROOT/scripts/browse_tui.py
+LIST=$PLUGIN_ROOT/scripts/list_sessions.py
+INDEXER=$PLUGIN_ROOT/scripts/index_sessions.py
+SEMANTIC=$PLUGIN_ROOT/scripts/semantic.py
+VENV_PY=$DATA_DIR/venv/bin/python
 
 # Refresh the index, then (only if semantic search has been set up via
 # setup_voyage.sh) incrementally embed any new/changed sessions. Both run in the
@@ -28,7 +29,7 @@ export INDEXER SEMANTIC VENV_PY
 nohup bash -c 'python3 "$INDEXER"; if [ -x "$VENV_PY" ] && [ -f "$SEMANTIC" ]; then "$VENV_PY" "$SEMANTIC" build; fi' >/dev/null 2>&1 &
 
 # Ensure the periodic transcript-backup daemon is running (idempotent).
-bash /home/bik/.claude/plugins/ask-expert/scripts/run_backup_daemon.sh >/dev/null 2>&1 || true
+bash $PLUGIN_ROOT/scripts/run_backup_daemon.sh >/dev/null 2>&1 || true
 
 # Capture the id of the session launching this TUI so the TUI can hard-refuse
 # to "continue" the very session you're sitting in (the #1 way two claude
@@ -67,6 +68,13 @@ fi
 
 # 3) Graphical terminal (only if a display is available)
 if [ -n "${DISPLAY:-}" ] || [ -n "${WAYLAND_DISPLAY:-}" ]; then
+  # User-configured terminal wins (expects a `-e CMD` convention). Falls through
+  # to auto-detect on failure.
+  if [ -n "${ASK_EXPERT_TERMINAL:-}" ]; then
+    if $ASK_EXPERT_TERMINAL -e bash -lc "$inner" 2>/dev/null; then
+      echo "TUI_OPENED: $ASK_EXPERT_TERMINAL window"; exit 0
+    fi
+  fi
   if command -v gnome-terminal >/dev/null 2>&1; then
     if gnome-terminal --geometry=140x40 -- bash -lc "$inner" 2>/dev/null; then
       echo "TUI_OPENED: new gnome-terminal window"
