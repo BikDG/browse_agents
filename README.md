@@ -140,14 +140,16 @@ DATA=$(grep '^ASK_EXPERT_DATA_DIR=' ~/.config/ask-expert/config.env | cut -d= -f
   running `scripts/setup_voyage.sh` (needs a key).
 - After the first `build`, you never repeat it manually — `/browse-experts`
   re-embeds new sessions incrementally.
-- **Minimum-similarity threshold.** FAISS results below a cosine score are
-  dropped so weak/irrelevant matches don't show (TUI `w` and `/ask-expert`
-  recall). Default `0.6`, tunable per-model in
-  `$ASK_EXPERT_DATA_DIR/semantic/config.json` as `"min_score": 0.6`. Note this is
-  model-dependent: `bge-small` scores are compressed (random text pairs sit
-  ~0.5), so ~0.6 is where "actually relevant" starts — lower it if good matches
-  get hidden, raise it to be stricter. Check scores to calibrate:
-  `semantic.py query "<q>" --min-score 0`.
+- **Ranking & cutoffs.** The TUI **`w`** search shows the **top 15** matches
+  ranked by cosine, each prefixed with its score, with **no threshold** — the
+  closest sessions always appear even if the match is weak (because `bge-small`
+  scores are compressed, an absolute cutoff can't reliably separate relevant from
+  noise; top-N is more predictable). `/ask-expert`'s FAISS recall still applies a
+  `min_score` floor before Haiku reranks — tunable in
+  `$ASK_EXPERT_DATA_DIR/semantic/config.json` as `"min_score": 0.6` (per-model;
+  `semantic.py query "<q>" --min-score 0` shows raw scores to calibrate).
+  Keyword lookups ("FAISS", a filename) are better served by `/` substring
+  search; `w` is for concepts/paraphrases.
 
 ---
 

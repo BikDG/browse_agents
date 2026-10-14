@@ -1202,14 +1202,14 @@ VENV_PY = DATA_DIR / "venv" / "bin" / "python"
 SEMANTIC_SCRIPT = PLUGIN_DIR / "scripts" / "semantic.py"
 
 
-def semantic_search(query, k=50):
+def semantic_search(query, k=15):
     """Ordered session ids via local/Voyage FAISS, or None if unavailable."""
     q = (query or "").strip()
     if not q or not (VENV_PY.exists() and SEMANTIC_SCRIPT.exists()):
         return None
     try:
         res = subprocess.run(
-            [str(VENV_PY), str(SEMANTIC_SCRIPT), "query", q, "-k", str(k)],
+            [str(VENV_PY), str(SEMANTIC_SCRIPT), "query", q, "-k", str(k), "--min-score", "0"],
             capture_output=True, text=True, timeout=60,
         )
     except (subprocess.TimeoutExpired, OSError):
