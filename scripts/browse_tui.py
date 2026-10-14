@@ -1548,6 +1548,16 @@ def tui_main(stdscr, sessions, roots, children):
             except OSError as e:
                 ok, note = False, f"indexer failed to start: {e}"
 
+            # Also refresh FAISS embeddings for new/changed sessions (if set up),
+            # so a rescan keeps semantic search (w / ask-expert) in sync too.
+            if ok and VENV_PY.exists() and SEMANTIC_SCRIPT.exists():
+                show_busy(stdscr, "  rescanning — updating semantic embeddings…")
+                try:
+                    subprocess.run([str(VENV_PY), str(SEMANTIC_SCRIPT), "build"],
+                                   capture_output=True, text=True, timeout=1800)
+                except (subprocess.TimeoutExpired, OSError):
+                    pass
+
             before = len(sessions)
             # Mutate in place: draw() and the closures hold this same dict.
             sessions.clear()
