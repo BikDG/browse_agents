@@ -900,7 +900,7 @@ def confirm_prompt(stdscr, msg):
             return False
 
 
-def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_active=False, stars=None, permissive=False, custom_titles=None, rename_active=False, rename_buffer="", folders=None, assignments=None, status_msg=None, pending=None, detached_ids=None, sem_query=None):
+def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_active=False, stars=None, permissive=False, custom_titles=None, rename_active=False, rename_buffer="", folders=None, assignments=None, status_msg=None, pending=None, detached_ids=None, sem_query=None, sem_scores=None):
     if stars is None:
         stars = set()
     if custom_titles is None:
@@ -968,6 +968,8 @@ def draw(stdscr, sessions, rows, cursor, scroll, search_query=None, search_activ
             meta = sessions.get(ident, {})
             line = render_row(ident, depth, has_kids, is_open, meta,
                               starred=(ident in stars), custom_titles=custom_titles)
+            if sem_query and sem_scores and sem_scores.get(ident) is not None:
+                line = f"{sem_scores[ident]:.2f} {line}"
             attr = sel_attr if is_cursor else curses.A_NORMAL
         safe_addstr(stdscr, 1 + i, 0, short(line, list_w).ljust(list_w)[:list_w], attr)
 
@@ -1218,7 +1220,7 @@ def semantic_search(query, k=50):
         hits = json.loads(res.stdout.strip())
     except json.JSONDecodeError:
         return None
-    return [h["id"] for h in hits if isinstance(h, dict) and h.get("id")]
+    return [h for h in hits if isinstance(h, dict) and h.get("id")]
 
 
 def tui_main(stdscr, sessions, roots, children):
@@ -1235,6 +1237,7 @@ def tui_main(stdscr, sessions, roots, children):
     wsearch_buffer = ""
     sem_query = ""
     sem_results = []
+    sem_scores = {}
     stars = load_stars()
     custom_titles = load_titles()
     folders, assignments = load_folders()
@@ -1311,7 +1314,7 @@ def tui_main(stdscr, sessions, roots, children):
         draw(stdscr, sessions, rows, cursor, scroll, search_query, search_active,
              stars, permissive, custom_titles, rename_active,
              active_rename_buf, folders, assignments, draw_status, pending,
-             detached, sem_query)
+             detached, sem_query, sem_scores)
         status_msg = None  # one-shot
 
         try:
@@ -1418,7 +1421,8 @@ def tui_main(stdscr, sessions, roots, children):
                 if res is None:
                     status_msg = "semantic search not set up (run setup_local.sh + semantic.py build)"
                 else:
-                    sem_results = [s for s in res if s in sessions]
+                    sem_results = [h["id"] for h in res if h["id"] in sessions]
+                    sem_scores = {h["id"]: h.get("score") for h in res}
                     sem_query = wsearch_buffer.strip()
                     search_query = ""
                     cursor = 0
