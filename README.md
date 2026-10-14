@@ -140,6 +140,14 @@ DATA=$(grep '^ASK_EXPERT_DATA_DIR=' ~/.config/ask-expert/config.env | cut -d= -f
   running `scripts/setup_voyage.sh` (needs a key).
 - After the first `build`, you never repeat it manually — `/browse-experts`
   re-embeds new sessions incrementally.
+- **Minimum-similarity threshold.** FAISS results below a cosine score are
+  dropped so weak/irrelevant matches don't show (TUI `w` and `/ask-expert`
+  recall). Default `0.6`, tunable per-model in
+  `$ASK_EXPERT_DATA_DIR/semantic/config.json` as `"min_score": 0.6`. Note this is
+  model-dependent: `bge-small` scores are compressed (random text pairs sit
+  ~0.5), so ~0.6 is where "actually relevant" starts — lower it if good matches
+  get hidden, raise it to be stricter. Check scores to calibrate:
+  `semantic.py query "<q>" --min-score 0`.
 
 ---
 

@@ -37,6 +37,7 @@ KEY_FILE = DATA_DIR / "voyage.env"
 DEFAULT_PROVIDER = "local"
 DEFAULT_LOCAL_MODEL = "BAAI/bge-small-en-v1.5"
 DEFAULT_VOYAGE_MODEL = "voyage-3.5-lite"
+DEFAULT_MIN_SCORE = 0.6   # drop FAISS hits below this cosine; tune in config.json
 DOC_CHAR_CAP = 6000
 VOYAGE_BATCH = 64
 
@@ -57,7 +58,13 @@ def load_config():
             pass
     if not model:
         model = DEFAULT_VOYAGE_MODEL if provider == "voyage" else DEFAULT_LOCAL_MODEL
-    return {"provider": provider, "model": model}
+    min_score = DEFAULT_MIN_SCORE
+    if CONFIG_FILE.exists():
+        try:
+            min_score = float(json.loads(CONFIG_FILE.read_text()).get("min_score", DEFAULT_MIN_SCORE))
+        except (json.JSONDecodeError, OSError, TypeError, ValueError):
+            pass
+    return {"provider": provider, "model": model, "min_score": min_score}
 
 
 # ---------------------------------------------------------------- embedders
@@ -220,7 +227,7 @@ def cmd_build(rebuild=False):
     return 0
 
 
-def cmd_query(text, k):
+def cmd_query(text, k, min_score=None):
     import numpy as np
     import faiss
 
@@ -238,8 +245,11 @@ def cmd_query(text, k):
     faiss.normalize_L2(q)
     k = min(k, len(ids))
     scores, rows = index.search(q, k)
+    if min_score is None:
+        min_score = load_config().get("min_score", DEFAULT_MIN_SCORE)
     out = [{"id": ids[r], "score": round(float(s), 4)}
-           for s, r in zip(scores[0], rows[0]) if 0 <= r < len(ids)]
+           for s, r in zip(scores[0], rows[0])
+           if 0 <= r < len(ids) and float(s) >= min_score]
     print(json.dumps(out))
     return 0
 
@@ -275,13 +285,14 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     b = sub.add_parser("build"); b.add_argument("--rebuild", action="store_true")
     q = sub.add_parser("query"); q.add_argument("text"); q.add_argument("-k", type=int, default=25)
+    q.add_argument("--min-score", type=float, default=None)
     sub.add_parser("stats")
     sub.add_parser("check")
     args = ap.parse_args()
     if args.cmd == "build":
         return cmd_build(rebuild=args.rebuild)
     if args.cmd == "query":
-        return cmd_query(args.text, args.k)
+        return cmd_query(args.text, args.k, args.min_score)
     if args.cmd == "stats":
         return cmd_stats()
     if args.cmd == "check":
